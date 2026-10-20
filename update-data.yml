@@ -1,0 +1,28 @@
+# Refreshes results, fixtures, schedule and the model every 6 hours, then saves them back to the repo.
+# Streamlit Community Cloud notices the new commit and updates the live site by itself.
+name: Update data
+
+on:
+  schedule:
+    - cron: "15 */6 * * *"
+  workflow_dispatch:          # lets you run it by hand from the Actions tab
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"        # keep this the same as the Python version chosen on Streamlit Cloud
+      - run: pip install -r requirements.txt
+      - run: python update_model.py
+      - name: Save changes
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A epl_model.joblib data
+          git diff --staged --quiet || (git commit -m "Update data" && git push)
